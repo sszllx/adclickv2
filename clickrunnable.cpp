@@ -82,6 +82,8 @@ HttpHandle::RetType HttpHandle::sendClick(QUrl url)
         return FAILED;
     }
 
+    qDebug() << "reply text:" << reply->readAll();
+
     if (reply->error() != QNetworkReply::NoError) {
         qDebug() << "error:" << reply->error() << "reply error: " << reply->errorString();
         reply->close();
