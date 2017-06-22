@@ -10,6 +10,7 @@
 class QThreadPool;
 class QNetworkAccessManager;
 class QNetworkReply;
+class QTimer;
 
 class Click : public QObject
 {
