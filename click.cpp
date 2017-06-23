@@ -78,16 +78,6 @@ void Click::startRequest()
 
         while (!id_file.atEnd()) {
             QString idfa = id_file.readLine().trimmed();
-            // 尽量每个ip发一次click
-            QThread::sleep(8);
-
-            QTime cur = QTime::currentTime();
-            int hour = cur.hour();
-            while (hour >= 1 && hour < 5) {
-                QThread::sleep(60);
-                QTime cur = QTime::currentTime();
-                hour = cur.hour();
-            }
 
             foreach(QString offer, offers) {
                 QString url = offer + "&idfa=" + idfa;
