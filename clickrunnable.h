@@ -34,6 +34,7 @@ private:
 
     QString m_ua;
     QString m_redirect_url;
+    QStringList errors;
 };
 
 class ClickRunnable : public QRunnable

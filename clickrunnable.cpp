@@ -36,7 +36,8 @@ void ClickRunnable::run()
 
 HttpHandle::HttpHandle()
 {
-
+    // init error string
+    errors << "no redirecting offer given";
 }
 
 RetType HttpHandle::request(QUrl url)
@@ -92,12 +93,12 @@ RetType HttpHandle::sendClick(QUrl url)
     QString reply_str = reply->readAll();
     qDebug() << "reply text:" << reply_str;
 
-    QRegExp re("C\\d+");
-    if (reply_str.contains(re)) {
-        qDebug() << "Error occurred";
-        return FATAL;
+    foreach (QString err, errors) {
+        if (reply_str.contains(err)) {
+            qDebug() << "Error occurred";
+            return FATAL;
+        }
     }
-
 
     if (reply->error() != QNetworkReply::NoError) {
         qDebug() << "error:" << reply->error() << "reply error: " << reply->errorString();
