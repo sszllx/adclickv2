@@ -26,7 +26,7 @@ Click::Click(QObject *parent) : QObject(parent),
 
     m_thread_pool->setMaxThreadCount(pool_size);
 
-    QFile offer_file("offers.txt");
+    QFile offer_file(QCoreApplication::applicationDirPath() + "/offers.txt");
     if (!offer_file.open(QIODevice::ReadOnly)) {
         offers << "https://global.ymtracking.com/trace?offer_id=5107479&aff_id=104991";
         offers << "https://global.ymtracking.com/trace?offer_id=5065577&aff_id=104991";
@@ -38,7 +38,7 @@ Click::Click(QObject *parent) : QObject(parent),
         }
     }
 
-    QFile ua_file("ua.txt");
+    QFile ua_file(QCoreApplication::applicationDirPath() + "ua.txt");
     if (!ua_file.open(QIODevice::ReadOnly)) {
         uas << "Mozilla/5.0 (iPhone; CPU iPhone OS 9_2 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13C75 Safari/601.1";
         uas << "Mozilla/5.0 (iPhone; CPU iPhone OS 10_0 like Mac OS X) AppleWebKit/602.1.38 (KHTML, like Gecko) Version/10.0 Mobile/14A5297c Safari/602.1";
@@ -58,6 +58,19 @@ QString Click::getUa()
     qsrand(time.msec() + time.second() * 1000);
     int rand = qrand();
     return uas.at(rand % uas.size());
+}
+
+void Click::removeOffer(QString offer_url)
+{
+    int index = offer_url.indexOf("&idfa");
+    QString offer = offer_url.mid(0, index);
+    if (!err_offers.contains(offer)) {
+        err_offers << offer;
+    }
+
+    if (!offers.isEmpty()) {
+        offers.removeOne(offer);
+    }
 }
 
 void Click::startRequest()
