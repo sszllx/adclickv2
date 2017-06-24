@@ -23,10 +23,15 @@ ClickRunnable::~ClickRunnable()
 void ClickRunnable::run()
 {
     HttpHandle http;
+    RetType ret_type;
 
     QString ua = m_click->getUa();
     http.setUA(ua);
-    http.request(QUrl(m_url));
+    ret_type = http.request(QUrl(m_url));
+
+    if (ret_type == FATAL) {
+        m_click->removeOffer(m_url);
+    }
 }
 
 HttpHandle::HttpHandle()
@@ -34,7 +39,7 @@ HttpHandle::HttpHandle()
 
 }
 
-void HttpHandle::request(QUrl url)
+RetType HttpHandle::request(QUrl url)
 {
     RetType ret;
     int retry_counter = 0;
@@ -42,25 +47,27 @@ void HttpHandle::request(QUrl url)
     while (1) {
         qDebug() << "url::" << url;
         if (url.toString().startsWith("https://itunes.apple.com")) {
-            break;
+            return SUCCESS;
         }
         ret = sendClick(url);
         if (ret == FAILED) {
             if (retry_counter == 10) {
                 qDebug() << "Max retries";
-                break;
+                return FAILED;
             }
             retry_counter++;
             QThread::sleep(2);
         } else if (ret == REDIRECT) {
             url = QUrl(m_redirect_url);
         } else if (ret == SUCCESS) {
-            break;
+            return SUCCESS;
+        } else if (ret == FATAL) {
+            return FATAL;
         }
     }
 }
 
-HttpHandle::RetType HttpHandle::sendClick(QUrl url)
+RetType HttpHandle::sendClick(QUrl url)
 {
     QEventLoop eventLoop;
     QTimer timer;
@@ -82,7 +89,15 @@ HttpHandle::RetType HttpHandle::sendClick(QUrl url)
         return FAILED;
     }
 
-    qDebug() << "reply text:" << reply->readAll();
+    QString reply_str = reply->readAll();
+    qDebug() << "reply text:" << reply_str;
+
+    QRegExp re("C\\d+");
+    if (reply_str.contains(re)) {
+        qDebug() << "Error occurred";
+        return FATAL;
+    }
+
 
     if (reply->error() != QNetworkReply::NoError) {
         qDebug() << "error:" << reply->error() << "reply error: " << reply->errorString();

@@ -11,6 +11,13 @@ class QNetworkAccessManager;
 class QNetworkReply;
 class QNetworkRequest;
 
+typedef enum {
+    SUCCESS = 0,
+    REDIRECT,
+    FAILED,
+    FATAL,
+} RetType;
+
 class HttpHandle : public QObject
 {
     Q_OBJECT
@@ -19,14 +26,8 @@ public:
 
     void setUA(QString ua) {m_ua = ua;}
 
-    typedef enum {
-        SUCCESS = 0,
-        REDIRECT = 1,
-        FAILED = 2,
-    } RetType;
-
 public slots:
-    void request(QUrl url);
+    RetType request(QUrl url);
 
 private:
     RetType sendClick(QUrl url);

@@ -19,6 +19,7 @@ public:
     explicit Click(QObject *parent = NULL);
 
     QString getUa();
+    void removeOffer(QString offer_url);
 
 signals:
 
@@ -29,6 +30,7 @@ private:
     QThreadPool* m_thread_pool;
 
     QStringList offers;
+    QStringList err_offers;
     QStringList uas;
     qint64 total_click;
     int pool_size;
