@@ -34,6 +34,7 @@ private:
     QStringList uas;
     qint64 total_click;
     int pool_size;
+    qint64 idfa_counter;
 };
 
 #endif // CLICK_H

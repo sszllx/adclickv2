@@ -9,7 +9,8 @@
 Click::Click(QObject *parent) : QObject(parent),
     m_thread_pool(QThreadPool::globalInstance()),
     total_click(0),
-    pool_size(MAX_THREAD_NUM)
+    pool_size(MAX_THREAD_NUM),
+    idfa_counter(0)
 {
     QFile config("config.txt");
     if (config.open(QIODevice::ReadOnly)) {
@@ -91,7 +92,7 @@ void Click::startRequest()
 
         while (!id_file.atEnd()) {
             QString idfa = id_file.readLine().trimmed();
-
+            qDebug() << "idfa counter:" << ++idfa_counter;
             foreach(QString offer, offers) {
                 QString url = offer + "&idfa=" + idfa;
                 ClickRunnable* click = new ClickRunnable(this);
@@ -103,8 +104,7 @@ void Click::startRequest()
                     QThread::sleep(1);
                 }
 
-                total_click++;
-                qDebug() << "total click: " << total_click;
+                qDebug() << "total click: " << ++total_click;
                 m_thread_pool->start(click);
             }
         }
