@@ -1,7 +1,7 @@
 #include "click.h"
 #include "clickrunnable.h"
 
-#include <QTime>
+#include <QDateTime>
 #include <QTimer>
 
 #define MAX_THREAD_NUM 16
@@ -29,13 +29,42 @@ Click::Click(QObject *parent) : QObject(parent),
 
     QFile offer_file(QCoreApplication::applicationDirPath() + "/offers.txt");
     if (!offer_file.open(QIODevice::ReadOnly)) {
-        offers << "https://global.ymtracking.com/trace?offer_id=5107479&aff_id=104991";
-        offers << "https://global.ymtracking.com/trace?offer_id=5065577&aff_id=104991";
-        offers << "http://svr.dotinapp.com/ics?sid=1217&adid=4006512";
+        qDebug() << "no offer list";
     } else {
+        PARSESTAT stat = NAME;
+        OfferItem* item = nullptr;
         while (!offer_file.atEnd()) {
             QString f = offer_file.readLine().trimmed();
-            offers << f;
+            if (f.startsWith("[")) {
+                stat = NAME;
+            } else if (f.startsWith("#")) {
+                stat = COMMENTS;
+            } else if (f.startsWith("/*")) {
+                stat = CHUNK_COMM;
+            } else {
+                stat = CONTENT;
+            }
+
+            switch (stat) {
+            case NAME:
+            {
+                int index = f.indexOf("]");
+                item = new OfferItem(f.mid(1, index-1));
+                offer_items << item;
+                stat = CONTENT;
+            }
+                break;
+            case CONTENT:
+                item->addOffer(f);
+                break;
+            case COMMENTS:
+                break;
+            case CHUNK_COMM:
+                while (f != "" && !f.endsWith("*/")) {
+                    f = offer_file.readLine().trimmed();
+                }
+                break;
+            }
         }
     }
 
@@ -61,16 +90,16 @@ QString Click::getUa()
     return uas.at(rand % uas.size());
 }
 
-void Click::removeOffer(QString offer_url)
+void Click::onErrorOffer(QString offer_url)
 {
     int index = offer_url.indexOf("&idfa");
     QString offer = offer_url.mid(0, index);
-    if (!err_offers.contains(offer)) {
-        err_offers << offer;
-    }
-
-    if (!offers.isEmpty()) {
-        offers.removeOne(offer);
+    foreach(OfferItem* item, offer_items) {
+        QStringList list = item->getOffers();
+        if (list.contains(offer)) {
+            item->advancedIndex();
+            break;
+        }
     }
 }
 
@@ -84,6 +113,7 @@ void Click::startRequest()
     if (file_list.size() == 0) {
         qDebug() << "no id files";
     }
+
     foreach (QFileInfo fi, file_list) {
         QFile id_file(fi.absoluteFilePath());
         if (!id_file.open(QIODevice::ReadOnly)) {
@@ -93,20 +123,106 @@ void Click::startRequest()
         while (!id_file.atEnd()) {
             QString idfa = id_file.readLine().trimmed();
             qDebug() << "idfa counter:" << ++idfa_counter;
-            foreach(QString offer, offers) {
-                QString url = offer + "&idfa=" + idfa;
+            foreach(OfferItem* item, offer_items) {
+                QString offname = item->offer();
+                if (offname == "") {
+                    continue;
+                }
+                QString url = offname + "&idfa=" + idfa;
+                // qDebug() << "====== url:" << url;
                 ClickRunnable* click = new ClickRunnable(this);
                 click->setUrl(url);
                 click->setAutoDelete(true);
 
                 while (m_thread_pool->activeThreadCount() == pool_size) {
-                    qDebug() << "wait pool";
+                    // qDebug() << "wait pool";
                     QThread::sleep(1);
                 }
 
                 qDebug() << "total click: " << ++total_click;
                 m_thread_pool->start(click);
+                item->logClick();
+
+                if (total_click > 500) {
+                    writeLog();
+                }
             }
         }
     }
 }
+
+void Click::writeLog()
+{
+    QFile file(QCoreApplication::applicationDirPath() + "/out.log");
+    file.open(QIODevice::WriteOnly);
+    QTextStream output(&file);
+    foreach(OfferItem* item, offer_items) {
+        QString output_str = QString("%1 %2 %3\r\n")
+                .arg(QDateTime::currentDateTime().toString())
+                .arg(item->name())
+                .arg(item->clickInfo());
+        output << output_str;
+    }
+}
+
+OfferItem::OfferItem(QString name) :
+    offer_name(name),
+    curOffer(0),
+    click_counter(0)
+{
+}
+
+QString OfferItem::name()
+{
+    return offer_name;
+}
+
+void OfferItem::addOffer(QString offer)
+{
+    offers.append(offer);
+
+    offer_map[offers.size() - 1] = 0;
+}
+
+QStringList OfferItem::getOffers()
+{
+    return offers;
+}
+
+QString OfferItem::offer()
+{
+    // TODO: 此处可恢复offer的有效性
+    // if (预算充足) curOffer = 0;
+    if (curOffer >= offers.size()) {
+        return "";
+    }
+
+    return offers[curOffer];
+}
+
+void OfferItem::advancedIndex()
+{
+    ++curOffer;
+}
+
+void OfferItem::logClick()
+{
+    // ++click_counter;
+    ++offer_map[curOffer];
+}
+
+QString OfferItem::clickInfo()
+{
+    // return click_counter;
+    QString ret;
+    QMap<int, qint64>::iterator iter = offer_map.begin();
+    while (iter != offer_map.end()) {
+        ret.append("offer:" + QString("%1").arg(iter.key())
+                   + " click:" +
+                   QString("%1").arg(iter.value()) + " ");
+        iter++;
+    }
+
+    return ret;
+}
+

@@ -30,7 +30,7 @@ void ClickRunnable::run()
     ret_type = http.request(QUrl(m_url));
 
     if (ret_type == FATAL) {
-        m_click->removeOffer(m_url);
+        m_click->onErrorOffer(m_url);
     }
 }
 
@@ -46,7 +46,7 @@ RetType HttpHandle::request(QUrl url)
     int retry_counter = 0;
 
     while (1) {
-        qDebug() << "url::" << url;
+        qDebug() << "http handle request url:" << url;
         if (url.toString().startsWith("https://itunes.apple.com")) {
             return SUCCESS;
         }
@@ -95,7 +95,7 @@ RetType HttpHandle::sendClick(QUrl url)
 
     foreach (QString err, errors) {
         if (reply_str.contains(err)) {
-            qDebug() << "Error occurred";
+            // qDebug() << "Error occurred";
             return FATAL;
         }
     }
@@ -108,7 +108,7 @@ RetType HttpHandle::sendClick(QUrl url)
     }
 
     int http_status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    qDebug() << "http:" << http_status;
+    // qDebug() << "http:" << http_status;
 
     reply->close();
     reply->deleteLater();
