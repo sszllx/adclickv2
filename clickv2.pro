@@ -26,4 +26,5 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 HEADERS += \
     click.h \
-    clickrunnable.h
+    clickrunnable.h \
+    bloom_filter.h
