@@ -12,7 +12,8 @@ Click::Click(QObject *parent) : QObject(parent),
     pool_size(MAX_THREAD_NUM),
     idfa_counter(0)
 {
-    QFile config("config.txt");
+    qDebug() << QCoreApplication::applicationDirPath() + "/config.txt";
+    QFile config(QCoreApplication::applicationDirPath() + "/config.txt");
     if (config.open(QIODevice::ReadOnly)) {
         QString ps = config.readLine();
         QStringList ps_pars = ps.split("=");
@@ -21,6 +22,7 @@ Click::Click(QObject *parent) : QObject(parent),
             uint size = ps_pars[1].toUInt(&ok);
             if (ok) {
                 pool_size = size;
+                qDebug() << "pool size:" << size;
             }
         }
     }

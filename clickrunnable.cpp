@@ -101,7 +101,7 @@ RetType HttpHandle::sendClick(QUrl url)
     }
 
     if (reply->error() != QNetworkReply::NoError) {
-        qDebug() << "error:" << reply->error() << "reply error: " << reply->errorString();
+        qDebug() << "url:" << reply->url() << "\n" << "reply error: " << reply->errorString();
         reply->close();
         reply->deleteLater();
         return FAILED;
