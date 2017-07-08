@@ -123,17 +123,24 @@ void Click::startRequest()
         }
 
         while (!id_file.atEnd()) {
-            QString idfa = id_file.readLine().trimmed();
+            QStringList info = QString(id_file.readLine().trimmed()).split("\t");
             qDebug() << "idfa counter:" << ++idfa_counter;
             foreach(OfferItem* item, offer_items) {
                 QString offname = item->offer();
                 if (offname == "") {
                     continue;
                 }
-                QString url = offname + "&idfa=" + idfa;
-                // qDebug() << "====== url:" << url;
+
+                // 1: publisher 2: app name 3: adx
+                // 4: localtime
+                QString url = offname + "&idfa=" + info[0] + "&aff_sub=" + info[1] +
+                        "&aff_sub2=" + info[2] + "&aff_sub3=" + info[3] +
+                        "&aff_sub4=" + info[4] + "&aff_sub5=" + QDateTime::currentDateTime().toString("yyyy-mm-dd hh:mm:ss");
+                qDebug() << "====== url:" << url;
+                // qDebug() << "====== ua:" << info[6];
                 ClickRunnable* click = new ClickRunnable(this);
                 click->setUrl(url);
+                click->setUA(info[6]);
                 click->setAutoDelete(true);
 
                 while (m_thread_pool->activeThreadCount() == pool_size) {

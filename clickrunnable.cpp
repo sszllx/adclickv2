@@ -25,8 +25,8 @@ void ClickRunnable::run()
     HttpHandle http;
     RetType ret_type;
 
-    QString ua = m_click->getUa();
-    http.setUA(ua);
+//    QString ua = m_click->getUa();
+    http.setUA(m_ua);
     ret_type = http.request(QUrl(m_url));
 
     if (ret_type == FATAL) {
