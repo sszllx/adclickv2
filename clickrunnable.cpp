@@ -26,7 +26,11 @@ void ClickRunnable::run()
     RetType ret_type;
 
 //    QString ua = m_click->getUa();
-    http.setUA(m_ua);
+    if (!m_ua.contains("iPhone")) {
+        http.setUA(m_click->getUa());
+    } else {
+        http.setUA(m_ua);
+    }
     ret_type = http.request(QUrl(m_url));
 
     if (ret_type == FATAL) {
