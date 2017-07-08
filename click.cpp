@@ -152,7 +152,7 @@ void Click::startRequest()
                 m_thread_pool->start(click);
                 item->logClick();
 
-                if (total_click > 500) {
+                if (total_click % 500 == 0) {
                     writeLog();
                 }
             }
