@@ -95,11 +95,12 @@ RetType HttpHandle::sendClick(QUrl url)
     }
 
     QString reply_str = reply->readAll();
-    qDebug() << "reply text:" << reply_str;
+    // qDebug() << "reply text:" << reply_str;
 
     foreach (QString err, errors) {
         if (reply_str.contains(err)) {
             // qDebug() << "Error occurred";
+            qDebug() << "error reply text:" << reply_str;
             return FATAL;
         }
     }

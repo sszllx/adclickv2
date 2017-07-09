@@ -135,7 +135,7 @@ void Click::startRequest()
                 // 4: localtime
                 QString url = offname + "&idfa=" + info[0] + "&aff_sub=" + info[1] +
                         "&aff_sub2=" + info[2] + "&aff_sub3=" + info[3] +
-                        "&aff_sub4=" + info[4] + "&aff_sub5=" + QDateTime::currentDateTime().toString("yyyy-mm-dd hh:mm:ss");
+                        "&aff_sub4=" + info[4] + "&aff_sub5=" + QDateTime::currentDateTime().toString("yyyy-MM-dd hh");
                 qDebug() << "====== url:" << url;
                 // qDebug() << "====== ua:" << info[6];
                 ClickRunnable* click = new ClickRunnable(this);
