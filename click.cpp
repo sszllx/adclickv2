@@ -124,6 +124,7 @@ void Click::startRequest()
 
         while (!id_file.atEnd()) {
             QStringList info = QString(id_file.readLine().trimmed()).split("\t");
+            qDebug() << "infosize:" << info.size();
             qDebug() << "idfa counter:" << ++idfa_counter;
             foreach(OfferItem* item, offer_items) {
                 QString offname = item->offer();
@@ -131,16 +132,21 @@ void Click::startRequest()
                     continue;
                 }
 
-                // 1: publisher 2: app name 3: adx
-                // 4: localtime
+                // 1: app name 2: adx
+                // 3: localtime
                 QString url = offname + "&idfa=" + info[0] + "&aff_sub=" + info[1] +
                         "&aff_sub2=" + info[2] + "&aff_sub3=" + info[3] +
-                        "&aff_sub4=" + info[4] + "&aff_sub5=" + QDateTime::currentDateTime().toString("yyyy-MM-dd hh");
+                        "&aff_sub4=" + QDateTime::currentDateTime().toString("yyyy-MM-dd hh");
                 qDebug() << "====== url:" << url;
                 // qDebug() << "====== ua:" << info[6];
                 ClickRunnable* click = new ClickRunnable(this);
                 click->setUrl(url);
-                click->setUA(info[6]);
+                if (info.size() < 5) {
+                    click->setUA("");
+                } else {
+                    click->setUA(info[4]);
+                }
+
                 click->setAutoDelete(true);
 
                 while (m_thread_pool->activeThreadCount() == pool_size) {
@@ -149,7 +155,7 @@ void Click::startRequest()
                 }
 
                 qDebug() << "total click: " << ++total_click;
-                m_thread_pool->start(click);
+                // m_thread_pool->start(click);
                 item->logClick();
 
                 if (total_click % 500 == 0) {
