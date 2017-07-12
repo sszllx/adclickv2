@@ -169,7 +169,7 @@ void Click::writeLog()
     QFile file(QCoreApplication::applicationDirPath() + "/out.log");
     file.open(QIODevice::WriteOnly | QIODevice::Append);
     QTextStream output(&file);
-    output << QDateTime::currentDateTime().toString("yyyy-MM-dd hh ") << "click:" << total_click;
+    output << QDateTime::currentDateTime().toString("yyyy-MM-dd hh ") << "click:" << total_click << "\n";
 #if 0
     foreach(OfferItem* item, offer_items) {
         QString output_str = QString("%1 %2 %3\r\n")
