@@ -80,7 +80,9 @@ RetType HttpHandle::sendClick(QUrl url)
     timer.setSingleShot(true);
     connect(&timer, &QTimer::timeout, &eventLoop, &QEventLoop::quit);
     QNetworkAccessManager mgr;
-    QNetworkRequest qnr(url);
+    QByteArray enc = url.toEncoded();
+    QUrl encUrl(enc);
+    QNetworkRequest qnr(encUrl);
     qnr.setHeader(QNetworkRequest::UserAgentHeader, m_ua);
     QNetworkReply* reply = mgr.get(qnr);
     QObject::connect(reply, &QNetworkReply::finished, &eventLoop, &QEventLoop::quit);
