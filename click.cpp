@@ -151,9 +151,14 @@ void Click::startRequest()
                 // m_thread_pool->start(click);
                 item->logClick();
 
-                if (total_click % 500 == 0) {
+                QDateTime dt = QDateTime::currentDateTime();
+                if (dt.time().minute() == 0) {
                     writeLog();
                 }
+
+//                if (total_click % 500 == 0) {
+//                    writeLog();
+//                }
             }
         }
     }
@@ -162,8 +167,10 @@ void Click::startRequest()
 void Click::writeLog()
 {
     QFile file(QCoreApplication::applicationDirPath() + "/out.log");
-    file.open(QIODevice::WriteOnly);
+    file.open(QIODevice::WriteOnly | QIODevice::Append);
     QTextStream output(&file);
+    output << QDateTime::currentDateTime().toString("yyyy-MM-dd hh ") << "click:" << total_click;
+#if 0
     foreach(OfferItem* item, offer_items) {
         QString output_str = QString("%1 %2 %3\r\n")
                 .arg(QDateTime::currentDateTime().toString())
@@ -171,6 +178,7 @@ void Click::writeLog()
                 .arg(item->clickInfo());
         output << output_str;
     }
+#endif
 }
 
 OfferItem::OfferItem(QString name) :
