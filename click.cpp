@@ -148,7 +148,7 @@ void Click::startRequest()
                 }
 
                 qDebug() << "total click: " << ++total_click;
-                // m_thread_pool->start(click);
+                m_thread_pool->start(click);
                 item->logClick();
 
                 QDateTime dt = QDateTime::currentDateTime();
