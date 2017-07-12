@@ -133,20 +133,13 @@ void Click::startRequest()
                 }
 
                 // 1: app name 2: adx
-                // 3: localtime
                 QString url = offname + "&idfa=" + info[0] + "&aff_sub=" + info[1] +
-                        "&aff_sub2=" + info[2] + "&aff_sub3=" + info[3] +
-                        "&aff_sub4=" + QDateTime::currentDateTime().toString("yyyy-MM-dd hh");
+                        "&aff_sub2=" + info[2] +
+                        "&aff_sub3=" + QDateTime::currentDateTime().toString("yyyy-MM-dd hh");
                 qDebug() << "====== url:" << url;
                 // qDebug() << "====== ua:" << info[6];
                 ClickRunnable* click = new ClickRunnable(this);
                 click->setUrl(url);
-                if (info.size() < 5) {
-                    click->setUA("");
-                } else {
-                    click->setUA(info[4]);
-                }
-
                 click->setAutoDelete(true);
 
                 while (m_thread_pool->activeThreadCount() == pool_size) {
