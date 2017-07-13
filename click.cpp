@@ -152,8 +152,12 @@ void Click::startRequest()
                 item->logClick();
 
                 QDateTime dt = QDateTime::currentDateTime();
-                if (dt.time().minute() == 0) {
+                static bool written = false;
+                if (dt.time().minute() == 0 && !written) {
                     writeLog();
+                    written = true;
+                } else {
+                    written = false;
                 }
 
 //                if (total_click % 500 == 0) {
