@@ -9,8 +9,8 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    Click click;
-    click.startRequest();
+    Click *click = Click::getInstance();
+    click->startRequest();
 
     return a.exec();
 }

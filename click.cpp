@@ -4,9 +4,16 @@
 #include <QDateTime>
 #include <QTimer>
 
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+
 #define MAX_THREAD_NUM 16
 
+Click *Click::m_self = NULL;
+
 Click::Click(QObject *parent) : QObject(parent),
+    should_quit(false),
     m_thread_pool(QThreadPool::globalInstance()),
     total_click(0),
     pool_size(MAX_THREAD_NUM),
@@ -15,14 +22,20 @@ Click::Click(QObject *parent) : QObject(parent),
     qDebug() << QCoreApplication::applicationDirPath() + "/config.txt";
     QFile config(QCoreApplication::applicationDirPath() + "/config.txt");
     if (config.open(QIODevice::ReadOnly)) {
-        QString ps = config.readLine();
-        QStringList ps_pars = ps.split("=");
-        if (ps_pars[0] == "pool_size") {
-            bool ok =false;
-            uint size = ps_pars[1].toUInt(&ok);
-            if (ok) {
-                pool_size = size;
-                qDebug() << "pool size:" << size;
+        while(!config.atEnd()) {
+            QString ps = config.readLine();
+            QStringList ps_pars = ps.split("=");
+            if (ps_pars[0] == "pool_size") {
+                bool ok =false;
+                uint size = ps_pars[1].toUInt(&ok);
+                if (ok) {
+                    pool_size = size;
+                    qDebug() << "pool size:" << size;
+                }
+            } else if (ps_pars[0] == "index") {
+                server_index = ps_pars[1].trimmed();
+            } else if (ps_pars[0] == "server") {
+                server_ip = ps_pars[1].trimmed();
             }
         }
     }
@@ -82,6 +95,26 @@ Click::Click(QObject *parent) : QObject(parent),
             uas << f;
         }
     }
+
+    m_thread = new TimerThread;
+    m_thread->start();
+
+    m_timer = new QTimer;
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(onTimeout()), Qt::DirectConnection);
+    m_timer->setSingleShot(true);
+    m_timer->start(2000);
+    m_timer->moveToThread(m_thread);
+
+    connect(this, SIGNAL(reloadID()), this, SLOT(onReloadID()));
+}
+
+Click *Click::getInstance()
+{
+    if (!m_self) {
+        m_self = new Click;
+    }
+
+    return m_self;
 }
 
 QString Click::getUa()
@@ -123,6 +156,10 @@ void Click::startRequest()
         }
 
         while (!id_file.atEnd()) {
+            if (should_quit) {
+                break;
+            }
+
             QStringList info = QString(id_file.readLine().trimmed()).split("\t");
             qDebug() << "infosize:" << info.size();
             qDebug() << "idfa counter:" << ++idfa_counter;
@@ -148,7 +185,7 @@ void Click::startRequest()
                 }
 
                 qDebug() << "total click: " << ++total_click;
-                m_thread_pool->start(click);
+                // m_thread_pool->start(click);
                 item->logClick();
 
                 QDateTime dt = QDateTime::currentDateTime();
@@ -160,12 +197,51 @@ void Click::startRequest()
                     written = false;
                 }
 
+                QThread::sleep(1);
+
 //                if (total_click % 500 == 0) {
 //                    writeLog();
 //                }
             }
         }
     }
+}
+
+void Click::onTimeout()
+{
+    this->should_quit = true;
+
+    emit reloadID();
+}
+
+void Click::onReloadID()
+{
+    QString strurl = "http://" + server_ip + "/ioslogs/" + server_index + ".id";
+    qDebug() << "get server id file:" << strurl;
+    QEventLoop eventLoop;
+    QNetworkAccessManager mgr;
+    QUrl url(strurl);
+    QNetworkRequest qnr(url);
+    QNetworkReply* reply = mgr.get(qnr);
+    QObject::connect(reply, &QNetworkReply::finished, &eventLoop, &QEventLoop::quit);
+    eventLoop.exec();
+
+    QString reply_str = reply->readAll();
+    qDebug() << "download finished";
+
+    QString filepath = QCoreApplication::applicationDirPath() + "/ioslogs/" + server_index + ".id";
+    QFile file(filepath);
+    if (file.exists()) {
+        file.remove();
+    }
+
+    file.open(QIODevice::WriteOnly);
+    QTextStream out(&file);
+    out << reply_str;
+    out.flush();
+
+    should_quit = false;
+    startRequest();
 }
 
 void Click::writeLog()
@@ -246,3 +322,15 @@ QString OfferItem::clickInfo()
     return ret;
 }
 
+
+TimerThread::TimerThread()
+{
+
+}
+
+void TimerThread::run()
+{
+    QEventLoop ev;
+
+    ev.exec();
+}

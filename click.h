@@ -12,6 +12,16 @@ class QNetworkAccessManager;
 class QNetworkReply;
 class QTimer;
 
+class TimerThread : public QThread
+{
+    Q_OBJECT
+public:
+    TimerThread();
+
+    void run() Q_DECL_OVERRIDE;
+
+};
+
 class OfferItem
 {
 public:
@@ -37,7 +47,7 @@ class Click : public QObject
 {
     Q_OBJECT
 public:
-    explicit Click(QObject *parent = NULL);
+    static Click *getInstance();
 
     QString getUa();
     void onErrorOffer(QString offer_url);
@@ -48,13 +58,18 @@ public:
         COMMENTS,
         CHUNK_COMM,
     } PARSESTAT;
+    bool should_quit;
 
 signals:
+    void reloadID();
 
 public slots:
     void startRequest();
+    void onTimeout();
+    void onReloadID();
 
 private:
+    explicit Click(QObject *parent = NULL);
     void writeLog();
     QThreadPool* m_thread_pool;
 
@@ -63,6 +78,12 @@ private:
     int pool_size;
     qint64 idfa_counter;
     QList<OfferItem *> offer_items;
+    static Click* m_self;
+
+    QTimer *m_timer;
+    TimerThread *m_thread;
+    QString server_index;
+    QString server_ip;
 };
 
 #endif // CLICK_H
