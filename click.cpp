@@ -17,7 +17,8 @@ Click::Click(QObject *parent) : QObject(parent),
     m_thread_pool(QThreadPool::globalInstance()),
     total_click(0),
     pool_size(MAX_THREAD_NUM),
-    idfa_counter(0)
+    idfa_counter(0),
+    check_interval(60000*30)
 {
     qDebug() << QCoreApplication::applicationDirPath() + "/config.txt";
     QFile config(QCoreApplication::applicationDirPath() + "/config.txt");
@@ -36,6 +37,13 @@ Click::Click(QObject *parent) : QObject(parent),
                 server_index = ps_pars[1].trimmed();
             } else if (ps_pars[0] == "server") {
                 server_ip = ps_pars[1].trimmed();
+            } else if (ps_pars[0] == "check_interval") {
+                bool ok =false;
+                uint interval = ps_pars[1].toUInt(&ok);
+                if (ok) {
+                    check_interval = interval;
+                    qDebug() << "interval:" << check_interval;
+                }
             }
         }
     }
@@ -102,7 +110,7 @@ Click::Click(QObject *parent) : QObject(parent),
     m_timer = new QTimer;
     connect(m_timer, SIGNAL(timeout()), this, SLOT(onTimeout()), Qt::DirectConnection);
     m_timer->setSingleShot(true);
-    m_timer->start(2000);
+    m_timer->start(60000 * 30);
     m_timer->moveToThread(m_thread);
 
     connect(this, SIGNAL(reloadID()), this, SLOT(onReloadID()));
@@ -147,6 +155,8 @@ void Click::startRequest()
     QFileInfoList file_list = dir.entryInfoList(files_type, QDir::Files);
     if (file_list.size() == 0) {
         qDebug() << "no id files";
+        getIdFromServer(true);
+        return;
     }
 
     foreach (QFileInfo fi, file_list) {
@@ -185,7 +195,7 @@ void Click::startRequest()
                 }
 
                 qDebug() << "total click: " << ++total_click;
-                // m_thread_pool->start(click);
+                m_thread_pool->start(click);
                 item->logClick();
 
                 QDateTime dt = QDateTime::currentDateTime();
@@ -197,37 +207,45 @@ void Click::startRequest()
                     written = false;
                 }
 
-                QThread::sleep(1);
-
 //                if (total_click % 500 == 0) {
 //                    writeLog();
 //                }
             }
         }
     }
+
+    getIdFromServer(false);
 }
 
 void Click::onTimeout()
 {
-    this->should_quit = true;
-
-    emit reloadID();
+    getIdFromServer(false);
 }
 
 void Click::onReloadID()
 {
-    QString strurl = "http://" + server_ip + "/ioslogs/" + server_index + ".id";
-    qDebug() << "get server id file:" << strurl;
-    QEventLoop eventLoop;
-    QNetworkAccessManager mgr;
-    QUrl url(strurl);
-    QNetworkRequest qnr(url);
-    QNetworkReply* reply = mgr.get(qnr);
-    QObject::connect(reply, &QNetworkReply::finished, &eventLoop, &QEventLoop::quit);
-    eventLoop.exec();
+    QNetworkReply* reply;
+    QString reply_str;
+    while (1) {
+        QString strurl = "http://" + server_ip + "/ioslogs/" + server_index + ".id";
+        qDebug() << "get server id file:" << strurl;
+        QEventLoop eventLoop;
+        QNetworkAccessManager mgr;
+        QUrl url(strurl);
+        QNetworkRequest qnr(url);
+        reply = mgr.get(qnr);
+        QObject::connect(reply, &QNetworkReply::finished, &eventLoop, &QEventLoop::quit);
+        eventLoop.exec();
 
-    QString reply_str = reply->readAll();
-    qDebug() << "download finished";
+        if (reply->error() != QNetworkReply::NoError) {
+            qDebug() << "reply error: " << reply->errorString();
+            continue;
+        }
+
+        reply_str = reply->readAll();
+        qDebug() << "download finished";
+        break;
+    }
 
     QString filepath = QCoreApplication::applicationDirPath() + "/ioslogs/" + server_index + ".id";
     QFile file(filepath);
@@ -244,12 +262,57 @@ void Click::onReloadID()
     startRequest();
 }
 
+void Click::getIdFromServer(bool no_id)
+{
+    QString md5file = QCoreApplication::applicationDirPath() + "/md5";
+    QFile file(md5file);
+    file.open(QIODevice::ReadWrite);
+    QTextStream out(&file);
+    if (file.exists()) {
+        md5_str = file.readAll();
+    }
+
+    QNetworkReply* reply;
+    QString reply_str;
+
+    while (1) {
+        QString strurl = "http://" + server_ip + "/ioslogs/md5";
+        qDebug() << "get md5:" << strurl;
+        QEventLoop eventLoop;
+        QNetworkAccessManager mgr;
+        QUrl url(strurl);
+        QNetworkRequest qnr(url);
+        reply = mgr.get(qnr);
+        QObject::connect(reply, &QNetworkReply::finished, &eventLoop, &QEventLoop::quit);
+        eventLoop.exec();
+
+        if (reply->error() != QNetworkReply::NoError) {
+            qDebug() << "reply error: " << reply->errorString();
+            continue;
+        }
+
+        reply_str = reply->readAll();
+        if (reply_str == md5_str && !no_id) {
+            return;
+        }
+        break;
+    }
+
+    md5_str = reply_str;
+    out << md5_str;
+    out.flush();
+    this->should_quit = true;
+    emit reloadID();
+}
+
 void Click::writeLog()
 {
     QFile file(QCoreApplication::applicationDirPath() + "/out.log");
     file.open(QIODevice::WriteOnly | QIODevice::Append);
     QTextStream output(&file);
-    output << QDateTime::currentDateTime().toString("yyyy-MM-dd hh ") << "click:" << total_click << "\n";
+    output << QDateTime::currentDateTime().toString("yyyy-MM-dd hh ") << "click:" << total_click
+           << " log md5: " << md5_str
+           << "\n";
 #if 0
     foreach(OfferItem* item, offer_items) {
         QString output_str = QString("%1 %2 %3\r\n")

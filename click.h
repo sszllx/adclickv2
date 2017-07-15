@@ -71,6 +71,8 @@ public slots:
 private:
     explicit Click(QObject *parent = NULL);
     void writeLog();
+    void getIdFromServer(bool no_id);
+
     QThreadPool* m_thread_pool;
 
     QStringList uas;
@@ -84,6 +86,8 @@ private:
     TimerThread *m_thread;
     QString server_index;
     QString server_ip;
+    QString md5_str;
+    uint check_interval;
 };
 
 #endif // CLICK_H
