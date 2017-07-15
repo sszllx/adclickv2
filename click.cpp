@@ -109,7 +109,7 @@ Click::Click(QObject *parent) : QObject(parent),
 
     m_timer = new QTimer;
     connect(m_timer, SIGNAL(timeout()), this, SLOT(onTimeout()), Qt::DirectConnection);
-    m_timer->setSingleShot(true);
+//    m_timer->setSingleShot(true);
     m_timer->start(60000 * 30);
     m_timer->moveToThread(m_thread);
 
