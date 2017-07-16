@@ -203,7 +203,7 @@ void Click::startRequest()
                 if (dt.time().minute() == 0 && !written) {
                     writeLog();
                     written = true;
-                } else {
+                } else if(dt.time().minute() == 1) {
                     written = false;
                 }
 
