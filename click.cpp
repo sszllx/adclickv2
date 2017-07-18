@@ -311,7 +311,6 @@ void Click::writeLog()
     file.open(QIODevice::WriteOnly | QIODevice::Append);
     QTextStream output(&file);
     output << QDateTime::currentDateTime().toString("yyyy-MM-dd hh ") << "click:" << total_click
-           << " log md5: " << md5_str
            << "\n";
 #if 0
     foreach(OfferItem* item, offer_items) {
