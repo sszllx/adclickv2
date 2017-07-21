@@ -188,7 +188,6 @@ void Click::startRequest()
                             "&aff_sub2=" + info[2] +
                             "&aff_sub3=" + QDateTime::currentDateTime().toString("yyyy-MM-dd hh");
                 }
-                QThread::sleep(2);
                 qDebug() << "====== url:" << url;
                 // qDebug() << "====== ua:" << info[6];
                 ClickRunnable* click = new ClickRunnable(this);
@@ -201,7 +200,7 @@ void Click::startRequest()
                 }
 
                 qDebug() << "total click: " << ++total_click;
-                // m_thread_pool->start(click);
+                m_thread_pool->start(click);
                 item->logClick();
 
                 QDateTime dt = QDateTime::currentDateTime();
