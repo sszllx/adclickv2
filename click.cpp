@@ -179,10 +179,16 @@ void Click::startRequest()
                     continue;
                 }
 
-                // 1: app name 2: adx
-                QString url = offname + "&idfa=" + info[0] + "&aff_sub=" + info[1] +
-                        "&aff_sub2=" + info[2] +
-                        "&aff_sub3=" + QDateTime::currentDateTime().toString("yyyy-MM-dd hh");
+                QString url;
+                if (m_wangmeng == "chzch") {
+                    url = offname + "&pub_idfa=" + info[0];
+                } else {
+                    // 1: app name 2: adx
+                    url = offname + "&idfa=" + info[0] + "&aff_sub=" + info[1] +
+                            "&aff_sub2=" + info[2] +
+                            "&aff_sub3=" + QDateTime::currentDateTime().toString("yyyy-MM-dd hh");
+                }
+                QThread::sleep(2);
                 qDebug() << "====== url:" << url;
                 // qDebug() << "====== ua:" << info[6];
                 ClickRunnable* click = new ClickRunnable(this);
@@ -195,7 +201,7 @@ void Click::startRequest()
                 }
 
                 qDebug() << "total click: " << ++total_click;
-                m_thread_pool->start(click);
+                // m_thread_pool->start(click);
                 item->logClick();
 
                 QDateTime dt = QDateTime::currentDateTime();

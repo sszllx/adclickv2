@@ -52,6 +52,10 @@ public:
     QString getUa();
     void onErrorOffer(QString offer_url);
 
+    void setWangmeng(QString wangmeng) {
+        m_wangmeng = wangmeng;
+    }
+
     typedef enum {
         NAME = 0,
         CONTENT,
@@ -88,6 +92,7 @@ private:
     QString server_ip;
     QString md5_str;
     uint check_interval;
+    QString m_wangmeng;
 };
 
 #endif // CLICK_H
