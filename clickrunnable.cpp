@@ -47,7 +47,8 @@ RetType HttpHandle::request(QUrl url)
     while (1) {
         qDebug() << "http handle request url:" << url;
         if (url.toString().startsWith("https://itunes.apple.com") ||
-                url.toString().startsWith("itms-appss")) {
+                url.toString().startsWith("itms-appss") ||
+                url.toString().startsWith("itmss")) {
             return SUCCESS;
         }
         ret = sendClick(url);
