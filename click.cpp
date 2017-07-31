@@ -104,6 +104,8 @@ Click::Click(QObject *parent) : QObject(parent),
         }
     }
 
+    md5_str = getLastMD5();
+
     m_thread = new TimerThread;
     m_thread->start();
 
@@ -247,7 +249,7 @@ void Click::onReloadID()
             continue;
         }
 
-        reply_str = reply->readAll();
+        reply_str = reply->readAll().trimmed();
         qDebug() << "download finished";
         break;
     }
@@ -269,14 +271,6 @@ void Click::onReloadID()
 
 void Click::getIdFromServer(bool no_id)
 {
-    QString md5file = QCoreApplication::applicationDirPath() + "/md5";
-    QFile file(md5file);
-    file.open(QIODevice::ReadWrite);
-    QTextStream out(&file);
-    if (file.exists()) {
-        md5_str = file.readAll();
-    }
-
     QNetworkReply* reply;
     QString reply_str;
 
@@ -296,18 +290,40 @@ void Click::getIdFromServer(bool no_id)
             continue;
         }
 
-        reply_str = reply->readAll();
-        if (reply_str == md5_str && !no_id) {
+        reply_str = reply->readAll().trimmed();
+        if (md5_str.size() == 0) {
+            md5_str = reply_str;
+        } else if (reply_str == md5_str && !no_id) {
             return;
         }
         break;
     }
 
-    md5_str = reply_str;
-    out << md5_str;
+    QString md5file = QCoreApplication::applicationDirPath() + "/md5";
+    QFile file(md5file);
+    file.open(QIODevice::ReadWrite);
+    QTextStream out(&file);
+    out << md5_str << "\n";
     out.flush();
     this->should_quit = true;
     emit reloadID();
+}
+
+QString Click::getLastMD5()
+{
+    QString md5;
+    QString md5file = QCoreApplication::applicationDirPath() + "/md5";
+    QFile file(md5file);
+    file.open(QIODevice::ReadWrite);
+//    QTextStream out(&file);
+
+    if (file.exists()) {
+        QString content = file.readAll().trimmed();
+        QStringList tmp_md5_list = content.split("\n");
+        md5 = tmp_md5_list[tmp_md5_list.size() - 1];
+    }
+
+    return md5;
 }
 
 void Click::writeLog()

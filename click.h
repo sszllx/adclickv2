@@ -76,6 +76,7 @@ private:
     explicit Click(QObject *parent = NULL);
     void writeLog();
     void getIdFromServer(bool no_id);
+    QString getLastMD5();
 
     QThreadPool* m_thread_pool;
 
