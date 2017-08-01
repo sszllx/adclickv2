@@ -291,11 +291,11 @@ void Click::getIdFromServer(bool no_id)
         }
 
         reply_str = reply->readAll().trimmed();
-        if (md5_str.size() == 0) {
-            md5_str = reply_str;
-        } else if (reply_str == md5_str && !no_id) {
+        if (reply_str == md5_str && !no_id) {
             return;
         }
+
+        md5_str = reply_str;
         break;
     }
 
